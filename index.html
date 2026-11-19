@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BelajarKu AI — Study smarter, on-device first</title>
+<meta name="description" content="BelajarKu AI turns study material into summaries, flashcards and quizzes. Short work runs on-device with Gemini Nano; long work falls back to Gemini in the cloud — all through Firebase AI Logic hybrid inference.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%232563eb'/%3E%3Ctext x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'%3EB%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
+<!--
+  Firebase JS SDK v13.4.0 (pinned) — hybrid inference with the
+  `inferenceSource` response property, and `model.initializeDeviceModel()`
+  (the on-device model download method; added in SDK v13, absent from
+  v12.5.0 which the app pinned before 19 Nov 2026).
+  Docs: https://firebase.google.com/docs/ai-logic/hybrid/web/get-started
+-->
+<script type="importmap">
+{
+  "imports": {
+    "firebase/app": "https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js",
+    "firebase/auth": "https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js",
+    "firebase/firestore": "https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js",
+    "firebase/app-check": "https://www.gstatic.com/firebasejs/13.4.0/firebase-app-check.js",
+    "firebase/remote-config": "https://www.gstatic.com/firebasejs/13.4.0/firebase-remote-config.js",
+    "firebase/ai": "https://www.gstatic.com/firebasejs/13.4.0/firebase-ai.js"
+  }
+}
+</script>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <h1>BelajarKu AI</h1>
+    <p data-i18n="app.tagline">Study smarter — on-device first, cloud when it matters.</p>
+  </div>
+  <button id="lang-toggle" class="btn secondary small" type="button" aria-label="Switch language">ID</button>
+</header>
+
+<main>
+  <section class="card intro">
+    <p data-i18n="app.intro">Paste your study material, then let AI turn it into a summary, flashcards, a quiz — or just ask it a question. Short work runs on your device (private, offline, free). Long work goes to the cloud.</p>
+    <div class="status-row">
+      <span id="status-firebase" class="status-pill warn">…</span>
+      <span id="status-device" class="status-pill muted">…</span>
+      <span id="status-auth" class="status-pill muted">…</span>
+    </div>
+    <div class="row">
+      <button id="prepare-btn" class="btn secondary" type="button" data-i18n="action.prepare-device">Prepare on-device model</button>
+      <button id="sign-in-btn" class="btn secondary" type="button" data-i18n="action.sign-in" hidden>Sign in anonymously</button>
+      <span id="progress-note" class="muted"></span>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="label-row">
+      <label for="material" data-i18n="label.material">Study material</label>
+      <span id="char-count" class="muted">0 chars</span>
+    </div>
+    <textarea id="material" rows="8" data-i18n-placeholder="label.material-placeholder" placeholder="Paste lecture notes, a textbook page, an article… anything you need to study."></textarea>
+    <div class="row">
+      <button id="sample-id-btn" class="btn secondary small" type="button" data-i18n="label.sample-id">Load sample (Indonesian)</button>
+      <button id="sample-en-btn" class="btn secondary small" type="button" data-i18n="label.sample-en">Load sample (English)</button>
+    </div>
+    <div class="row">
+      <label for="mode-select" data-i18n="label.mode">Inference mode</label>
+      <select id="mode-select">
+        <option value="auto" data-i18n="mode.auto">Auto — on-device first, cloud fallback</option>
+        <option value="on-device" data-i18n="mode.on-device">On-device only</option>
+        <option value="cloud" data-i18n="mode.cloud">Cloud only</option>
+      </select>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="tool-tabs" role="tablist">
+      <button class="tool-tab active" data-tool="summary" type="button" data-i18n="tool.summary">Summary</button>
+      <button class="tool-tab" data-tool="flashcards" type="button" data-i18n="tool.flashcards">Flashcards</button>
+      <button class="tool-tab" data-tool="quiz" type="button" data-i18n="tool.quiz">Quiz</button>
+      <button class="tool-tab" data-tool="ask" type="button" data-i18n="tool.ask">Ask a question</button>
+    </div>
+    <div id="ask-row" class="row" hidden>
+      <label for="question" data-i18n="label.your-question">Your question</label>
+      <input id="question" type="text" data-i18n-placeholder="label.ask-placeholder" placeholder="Ask something about the material above…">
+    </div>
+    <div class="row">
+      <button id="run-btn" class="btn primary" type="button" data-i18n="action.run">Run</button>
+      <button id="save-set-btn" class="btn secondary" type="button" data-i18n="action.save-set" hidden>Save this study set</button>
+    </div>
+    <div id="error-box" class="error" hidden></div>
+    <div id="result-area"></div>
+  </section>
+
+  <section class="card">
+    <h2 data-i18n="label.saved-sets">Saved study sets</h2>
+    <div id="sets-list"></div>
+  </section>
+
+  <section class="card">
+    <h2 data-i18n="label.how-it-works">How the hybrid part works</h2>
+    <p data-i18n="text.how-it-works">Every request is single-turn text. In Auto mode the app first asks Chrome’s on-device model (Gemini Nano). If the material is short and the model is ready, the answer never leaves your device — private, offline, free. If the material is long, or the device has no local model, the same prompt goes to Gemini in the cloud instead. The badge above each result shows which path answered.</p>
+    <p class="muted">Built with Firebase AI Logic (hybrid inference) + App Check + Authentication + Firestore + Remote Config. On-device inference needs Chrome 139+ on desktop. Source: <a href="https://firebase.google.com/docs/ai-logic/hybrid/web/get-started">Firebase AI Logic hybrid docs</a>.</p>
+  </section>
+</main>
+
+<footer>
+  <p>BelajarKu AI — built for #BuildHybridAI 2026. Open source (MIT). No study material is stored on any server except your own Firebase project, and only when you press “Save this study set”.</p>
+</footer>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

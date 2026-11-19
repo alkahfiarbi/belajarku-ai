@@ -1,0 +1,7 @@
+Fotosintesis adalah proses tumbuhan hijau mengubah energi cahaya matahari menjadi energi kimia yang disimpan dalam bentuk glukosa. Proses ini terjadi di dalam kloroplas, terutama pada bagian tilakoid dan stroma, dengan bantuan pigmen klorofil yang memberi warna hijau pada daun.
+
+Bahan yang dibutuhkan fotosintesis ada tiga: air (H2O) yang diserap akar dari tanah, karbon dioksida (CO2) yang masuk melalui stomata di daun, dan cahaya matahari. Hasilnya adalah glukosa (C6H12O6) sebagai sumber energi dan oksigen (O2) yang dilepas ke udara.
+
+Fotosintesis berlangsung dalam dua tahap. Tahap pertama adalah reaksi terang yang terjadi di membran tilakoid dan membutuhkan cahaya; tahap ini memecah air, menghasilkan oksigen, ATP, dan NADPH. Tahap kedua adalah siklus Calvin yang terjadi di stroma dan tidak membutuhkan cahaya secara langsung; tahap ini memakai ATP dan NADPH untuk mengubah CO2 menjadi glukosa.
+
+Faktor yang memengaruhi laju fotosintesis antara lain intensitas cahaya, konsentrasi CO2, suhu, dan ketersediaan air. Jika salah satu faktor terlalu rendah, laju fotosintesis menurun. Fotosintesis sangat penting bagi kehidupan di Bumi karena menghasilkan oksigen yang kita hirup dan menjadi dasar hampir semua rantai makanan.
